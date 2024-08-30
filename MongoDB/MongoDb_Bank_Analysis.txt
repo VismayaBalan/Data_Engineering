@@ -1,0 +1,391 @@
+Banking Customer Analysis – MongoDB
+
+1. Give marketing success rate (No. of people subscribed / total no. of entries)
+	db.banking.find({"y": "yes"}).count()/db.banking.find().count()
+
+			another way
+		------------------------------
+
+	db.bank.aggregate([
+{
+	$facet : {
+		totalCount : [{$count : "total"}],
+		subCount : [{$match:{y:'yes'}},
+                {$count:"sub"}]
+}
+},
+{
+	$project:{
+						totalCount:{$arrayElemAt:['$totalCount.total',0]},
+						subCount:{$arrayElemAt:['$subCount.sub',0]},
+						sucessRate:{
+									$divide:[
+                    {$arrayElemAt:['$subCount.sub',0]},
+                    {$arrayElemAt:['$totalCount.total',0]}
+											]
+							}
+					}
+}
+])
+
+
+
+2. Give marketing failure rate
+	db.banking.find({"y": "no"}).count()/db.banking.find().count()
+
+3. Give the maximum, mean, median, minimum age of the average targeted customer.
+
+
+db.banking.aggregate([
+  {
+    '$group': {
+      '_id': null,
+      'avgage': { '$avg': '$age' },
+      'maxage': { '$max': '$age' },
+      'minage': { '$min': '$age' },
+      'medianage': { 
+        '$median': { 
+          'input': '$age', 
+          'method': 'approximate'  
+        } 
+      }
+    }
+  }
+])
+
+4. Check if age matters in marketing subscription for deposit
+
+db.banking.aggregate([
+  {$match: {y:"yes"}},
+  {"$group": {_id:"$age",count:{$sum:1}}},
+  {$sort:{count:-1}}
+])
+5. Check if marital status mattered for a subscription to deposit
+
+db.banking.aggregate([
+  {$match: {y:"yes"}},
+  {"$group": {_id:"$marital",count:{$sum:1}}},
+  {$sort:{count:-1}}
+])
+
+6. Check if age and marital status together mattered for a subscription to deposit scheme
+
+db.banking.aggregate([
+  {$match: {y:"yes"}},
+  {"$group": {_id:["$age","$marital"],count:{$sum:1}}},
+  {$sort:{count:-1}}
+])
+
+7. Find All Records Where Housing Loan is Approved
+db.banking.find({"housing":"yes"})
+
+8. Find Records with High Account Balance
+db.banking.find({"balance":{$gte:50000}}).sort({"balance":-1}).limit(5)
+
+9. Count Records by Job Type
+
+db.banking.aggregate([
+  {"$group": {_id:"$job",count:{$sum:1}}},
+  {$sort:{count:-1}}
+])
+
+10. count the total Married Individuals with Secondary Education
+
+db.banking.aggregate([
+  {$match: {marital:"married",education:"secondary"}},
+  {"$group": {_id:{"education":"$education","marital":"$marital"},count:{$sum:1}}},
+  {$sort:{count:-1}}
+])
+
+
+11. Calculate the Average Balance for Each Job Type
+
+db.banking.aggregate([
+  {"$group": {_id:"$job",avgbalance:{$avg:"$balance"}}},
+  {$sort:{avgbalance:-1}}
+])
+
+12. Find the Most Common Education Level Among Those with Loans
+
+db.banking.aggregate([
+  {$match: {loan:"yes"}},
+  {"$group": {_id:"$education",count:{$sum:1}}},
+  {$sort:{count:-1}}
+])
+
+13. Find Individuals with Multiple Campaign Contacts
+
+db.banking.find({"campaign":{$gt:1}})
+
+14. Identify Anomalies in Account Balances
+
+15. Analyze Seasonal Patterns
+
+db.banking.aggregate([
+  {$group:{_id:"$month", avgDuration:{$avg:"$duration"},totalcall:{$sum:1}
+	
+}},
+  {
+$sort:{avgDuration:-1}
+}
+])
+16. Determine Correlation Between Loan Status and Balance
+db.banking.aggregate([
+  {$group:{_id:"$loan", avgBalance:{$avg:"$balance"},totalcount:{$sum:1}
+	
+}}
+])
+17. Identify the Most Common Day for Successful Campaigns
+db.banking.aggregate([
+  {$match:{y:"yes"}},
+  {$group:{_id:"$day", count:{$sum:1}
+	
+}}, {$sort:{count:-1}} , {$limit:5}
+])
+18. Find the Youngest Person with the Highest Account Balance
+db.banking.find().sort({"age":1,"balance":-1}).limit(1)
+
+19. Identify Customers with Consistently Low Balances
+db.banking.find({"balance":{$lt:100}})
+
+20. Analyze the Relationship Between Campaign Duration and Outcome
+db.banking.aggregate({$group:{_id:"$y",avgDuration:{$avg:"$duration"}, 
+			maxDuration: {$max:"$duration"},
+			minDuration:{$min:"$duration"}  
+}})
+
+21. Detect Loan Trends Among Different Job Categories
+db.banking.createIndex({job:1,loan:1})
+
+db.banking.aggregate([
+  {$match:{loan:"yes"}},
+  {$group: {_id:"$job",count:{$sum:1}}},
+  {$sort:{count:-1}}
+])
+
+Insight: People taking more loans with less money
+
+22. Identify the Most Common Outcomes for Married Individuals
+
+db.banking.aggregate([
+  {$match:{marital:"married"}},
+  {$group: {_id:"$poutcome",count:{$sum:1}}},
+  {$sort:{count:-1}}
+])
+
+23. Find the Distribution of Account Balances Across Different Education Levels
+
+
+24. Find ranking of Customers based on Account Balance.
+
+
+  TEMPLATE FOR aggregate function
+------------------------------------
+
+db.banking.aggregate([
+	{ $match:{} },
+	{ $group:{_id:} },
+	{ $sort: {} }
+])
+
+
+
+  TEMPLATE FOR find function
+------------------------------------
+
+db.banking.find({query},{_id:1,age:1}).sort().limit()
+db.banking.find({query},{projection}).sort().limit()
+
+
+
+– Inner Join
+---------------
+db.orders.aggregate([
+{$lookup: {
+from: "inventory",
+localField: "prodId",    // Field from "orders" collection
+foreignField: "prodId",  // Field from "inventory" collection
+as: "productDetails"
+}},
+{$unwind:"$productDetails"} // Flatten array to get a single document
+])
+
+OR
+
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "inventory",
+      localField: "prodId",
+      foreignField: "prodId",
+      as: "inventoryDetails"
+    }
+  },
+  {
+    $unwind: "$inventoryDetails"
+  },
+  {
+    $project: {
+      _id: 0,
+      orderId: 1,
+      custid: 1,
+      prodId: 1,
+      numPurchased: 1,
+      price: "$inventoryDetails.price",
+      quantity: "$inventoryDetails.quantity"
+    }
+  }
+])
+
+
+– Left Join
+----------------
+db.orders.aggregate([
+{$lookup: {
+from: "inventory",
+localField: "prodId",    // Field from "orders" collection
+foreignField: "prodId",  // Field from "inventory" collection
+as: "productDetails"
+}}
+])
+
+OR
+
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "inventory",
+      localField: "prodId",
+      foreignField: "prodId",
+      as: "inventoryDetails"
+    }
+  },
+  {
+    $unwind: {
+      path: "$inventoryDetails",
+      preserveNullAndEmptyArrays: true
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      orderId: 1,
+      custid: 1,
+      prodId: 1,
+      numPurchased: 1,
+      price: { $ifNull: ["$inventoryDetails.price", null] },
+      quantity: { $ifNull: ["$inventoryDetails.quantity", null] }
+    }
+  }
+])
+
+
+– Right Join
+-----------------
+db.inventory.aggregate([
+  {
+    $lookup: {
+      from: "orders",
+      localField: "prodId",
+      foreignField: "prodId",
+      as: "ordersDetails"
+    }
+  },
+  {
+    $unwind: {
+      path: "$ordersDetails",
+      preserveNullAndEmptyArrays: true
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      prodId:1,
+      price: 1,
+      quantity: 1,
+      orderId: { $ifNull: ["$ordersDetails.orderId", null] },
+      custid: { $ifNull: ["$ordersDetails.custid", null] },
+      numPurchased: { $ifNull: ["$ordersDetails.numPurchased", null] }
+     }
+  }
+])
+
+– Union: Concatenation between two collection documents.
+----------------------------------------------------------
+db.orders.aggregate([
+  {
+    $unionWith: {
+      coll: "inventory"
+    }
+  }
+])
+
+– Union (Full Outer Join)
+---------------------------
+db.orders.aggregate([
+  // First stage: Lookup inventory details for each order
+  {
+    $lookup: {
+      from: "inventory",
+      localField: "prodId",
+      foreignField: "prodId",
+      as: "inventoryDetails"
+    }
+  },
+  {
+    $unwind: {
+      path: "$inventoryDetails",
+      preserveNullAndEmptyArrays: true
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      orderId: 1,
+      custid: 1,
+      prodId: 1,
+      numPurchased: 1,
+      price: { $ifNull: ["$inventoryDetails.price", null] },
+      quantity: { $ifNull: ["$inventoryDetails.quantity", null] }
+    }
+  },
+  // Union with inventory collection to include unmatched inventory records
+  {
+    $unionWith: {
+      coll: "inventory",
+      pipeline: [
+        {
+          $lookup: {
+            from: "orders",
+            localField: "prodId",
+            foreignField: "prodId",
+            as: "orderDetails"
+          }
+        },
+        {
+          $unwind: {
+            path: "$orderDetails",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            prodId: 1,
+            price: 1,
+            quantity: 1,
+            orderId: { $ifNull: ["$orderDetails.orderId", null] },
+            custid: { $ifNull: ["$orderDetails.custid", null] },
+            numPurchased: { $ifNull: ["$orderDetails.numPurchased", null] }
+          }
+        }
+      ]
+    }
+  }
+])
+
+
+
+
+
+

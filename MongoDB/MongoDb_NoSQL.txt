@@ -1,0 +1,190 @@
+-- use restaurants
+	db.createCollection("restaurant");
+
+-- display collection count
+	db.getCollectionCount("restaurant");
+
+-- To show restaurant_id, name, borough, zipcode, but not field id  , zipcode is inside address
+
+	db.restaurant.find({},{restaurant_id:1 , name:1, borough:1, "address.zipcode":1, _id:0})
+
+	find(query,projection)
+-- combined response of query and collection
+	db.restaurant.find({"cuisine":"Bakery"},{restaurant_id:1 , name:1, borough:1, "address.zipcode":1, _id:0})
+
+-- show all restaurant with first score greater than 2
+	db.restaurant.find({"grades.0.score":{$gt : 2}})
+
+-- unwind is to deconstruct the array of grades into indvidual document
+	db.restaurant.aggregate([
+  	{$unwind:"$grades"},
+  	{"$group": {_id:"$_id", totalScore: {$sum: "$grades.score"}}}
+	]
+	)
+
+-- show all records having score greater than 80
+
+	db.restaurant.find({"grades.score": {$gt:80}})
+
+-- Show records having total score greater than 90
+
+db.restaurant.aggregate([
+  {$unwind:"$grades"},
+  {"$group": {_id:"$restaurant_id", totalScore: {$sum: "$grades.score"},
+name: {$first: "$name"},cuisine: {$first: "$cuisine"}, address: {$first: "$address"}}},
+  {$match: {totalScore:{$gte:90}}}
+]
+)
+
+without quotes - prededined function
+with quotes and dollar - value
+without quotes and dollar - column name
+
+-- restaurants that achieved a score more than 80 but less than 100
+
+	db.restaurant.find({"grades.score": {$gt: 80, $lt:100}})
+
+-- .pretty() is used to make the response more pretty
+
+--  db.restaurant.find({"grades.score": {$gt: 20},
+                    "restaurant_id": {$gte: "30000000"}
+	})
+
+
+
+-- $or
+
+	db.restaurant.find({$or: [{"grades.score": {$gt: 20}},
+                          {"restaurant_id": {$gte: "30000000"}}
+ 	]})
+
+
+-- $and
+
+db.restaurant.find({$and: [{"grades.score": {$gt: 20}},
+                          {"restaurant_id": {$gte: "30000000"}}
+ ]})
+
+
+-- $not
+
+db.restaurant.find({"cuisine": {$not: /^Bakery$/ }})
+
+-- $ne : not equal to 
+db.restaurant.find({"cuisine": {$ne: "Bakery" }})
+
+6) write query to show the restaurants that do not prepare any cuisine of american & grade score > 70
+
+
+db.restaurant.find({$and: [{"grades.score": {$gt: 70}},
+                          {"cuisine": {$ne: "American "}}
+ ]})
+
+7) To arrange names of cuisine in ascending order and borough in descending order
+
+db.restaurant.find().sort({cuisine:1,borough:-1}).pretty()
+
+
+
+----------------------------------------------------------------------------------------------------------
+
+--1) find all restaurants in brooklyn with a grade B or below
+
+db.restaurant.find({"borough":"Brooklyn","grades.grade":{$nin : ['A']}})
+
+db.restaurant.find({"borough":"Brooklyn","grades.grade":{$gte : 'B'}})
+
+
+db.restaurant.find({"borough":"Brooklyn","grades.grade":{$nin : ['A']},"grades":{$ne:[]}})
+
+db.restaurant.find({"borough":"Brooklyn","grades.grade":{$nin : ['A']},"grades":{$ne:[]}}).count()
+
+nin ensures all the entries satisfies the condition
+
+--2) restaurants with avg score below 10
+db.restaurant.aggregate([
+  {$unwind:"$grades"},
+  {"$group": {_id:"$restaurant_id", avgScore: {$avg: "$grades.score"}}},
+  {$match: {avgScore:{$lt:10}}}
+]
+)
+
+
+--3) find all restaurants in brooklyn borough that serve american online and
+ have a score less than 10 on any inspection
+
+db.restaurant.find({"borough":"Brooklyn","cuisine":"American ","grades.score":{$lt:10} })
+
+db.restaurant.find({"borough":"Brooklyn","cuisine":"American ","grades":{$elemMatch:{score:{$lt:10}}} })
+
+
+--4) Retrieve all restaurants that have a A grade and 
+sort them by the most recent grade date in descending order
+
+db.restaurant.find({"grades.grade":'A'}).sort({"grades.date":-1})  -1 means descending 
+								    1 means ascending						
+db.restaurant.find({"grades.grade":'A'},{name:1,"grades.$":1}).sort({"grades.date":-1})
+
+--5) set the limit on response to 10 of previous output
+
+db.restaurant.find({"grades.grade":'A'}).sort({"grades.date":-1}).limit(10)
+
+--6) for each borough calculate and find aggregate methods - find average, median, minimum and maximum grade score
+
+
+db.restaurant.aggregate([
+  {$match: {cuisine: "Chinese"}},
+  {$unwind: "$grades"},
+  {$group:{_id:"$borough", scores:{$push:"$grades.score"}}}
+]
+)
+
+returns score grades in an array format (for that we used push)
+group by borough and filtered by cuisine = chinese
+
+
+db.restaurant.aggregate([
+  {$match: {cuisine: "Chinese"}},
+  {$unwind: "$grades"},
+  {$group:{_id:"$borough", scores:{$push:"$grades.score"}}},
+  {$addFields:{medianscore: {$median: {input: "$scores", method:"approximate"}}}},
+  {$project: {_id:0,borough:"$_id", avgscore:{$avg:"$scores"},minscore:{$min:"$scores"},maxscore:{$max:"$scores"},medianscore:1}}
+]
+)
+
+
+easy method 
+
+db.restaurant.aggregate([
+  {$match: {cuisine: "Chinese"}},
+  {$unwind: "$grades"},
+  {$group:{_id:"$borough", scores:{$push:"$grades.score"}}},
+  
+  {$project: {_id:0,borough:"$_id", avgscore:{$avg:"$scores"},
+minscore:{$min:"$scores"},maxscore:{$max:"$scores"},medianscore:{$median: {input:"$scores", method:"approximate"}}}}
+]
+)
+
+-- 7. Indexing
+
+create a compound index on borough and cuisine , 
+then query restaurants in "Queens" serving "Jewish/Kosher" cuisine using this index.
+
+createIndex(), find()
+
+-- Optimisation of query using indexing
+db.restaurant.createIndex({borough:1, cuisine:1})
+db.restaurant.find({borough:"Queens",cuisine:"Jewish/Kosher"})
+
+
+-- Optimisation using partial index for restaurants
+db.restaurant.createIndex(
+{"grades.score":1},
+{partialFilterExpression:{"grades.score":{$gt:20}}}
+)
+
+db.restaurant.find({"grades.score":{$gt: 20}})
+
+$lookup - Join 
+
+
