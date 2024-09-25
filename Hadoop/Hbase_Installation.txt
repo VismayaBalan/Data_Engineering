@@ -1,0 +1,171 @@
+wget http://mirror.fibergrid.in/apache/hbase/1.1.5/hbase-1.1.5-bin.tar.gz
+
+HBase stores data in the form of key/value pairs in a columnar model. 
+In this model, all the columns are grouped together as Column families
+HBase provides flexible data model and low latency access to small amounts of data stored in large data sets
+HBase on top of Hadoop will increase throughput and performance of distributed cluster set up. 
+In turn, it provides faster random reads and writes operations
+
+Data Base Type   	Example of Database	Use case (When to Use)
+Based on Feature
+------------------------------------------------------------------------------------------
+Key/ Value		Redis, 			Caching, Queue-ing, Distributing 								information
+			MemcacheDB
+------------------------------------------------------------------------------------------
+Column Oriented		Cassandra, HBase	Scaling, Keeping Unstructured, non-						                volatile
+------------------------------------------------------------------------------------------
+Document Oriented	MongoDB, Couchbase	Nested Information, JavaScript friendly
+------------------------------------------------------------------------------------------
+Graph Based		OrientDB, Neo4J		Handling Complex relational information. 
+						Modeling and Handling classification.
+------------------------------------------------------------------------------------------
+
+USE CASES:
+----------
+Banking Industry
+----------------
+Problem Statement:
+
+The Banking industry generates millions of records on a daily basis. In addition to this, banking industry also needs analytics solution that can detect Fraud in money transactions.
+
+Solution:
+
+To store, process and update huge volumes of data and performing analytics, an ideal solution is - HBase integrated with several Hadoop eco system components.
+
+That apart, HBase can be used -
+
+Whenever there is a need to write heavy applications.
+Performing online log analytics and to generate compliance reports.
+Summary:-
+
+HBase provides unique features and will solve typical industrial use cases. As a column-oriented storage, it provides fast querying, fetching of results and high amount of data storage.
+
+-------------------
+HBASE INSTALLATION:
+-------------------
+HBase can be installed in three modes. The features of these modes are mentioned below.
+
+1. Standalone mode installation (No dependency on Hadoop system)
+   ----------------------------
+   This is default mode of HBase
+   It runs against local file system
+   It doesn't use Hadoop HDFS
+   Only HMaster daemon can run
+   Not recommended for production environment
+   Runs in single JVM
+
+2. Pseudo-Distributed mode installation ( Single node Hadoop system + HBase installation)
+   ------------------------------------
+   It runs on Hadoop HDFS
+   All Daemons run in single node
+   Recommend for production environment
+
+3. Fully Distributed mode installation (MultinodeHadoop environment + HBase Installation)
+   -----------------------------------
+   It runs on Hadoop HDFS
+   All daemons going to run across all nodes present in the cluster
+   Highly recommended for production environment
+
+wget http://mirror.fibergrid.in/apache/hbase/1.1.5/hbase-1.1.5-bin.tar.gz
+
+move to /usr/local/hbase
+
+open .bashrc:
+-------------
+export HBASE_HOME=/usr/local/hbase
+export HBASE_CONF_DIR=$HBASE_HOME/conf
+export HBASE_CLASS_PATH=$HBASE_CONF_DIR
+export PATH=$PATH:$HBASE_HOME/bin
+
+STANDALONE MODE:
+----------------
+Open hbase-env.sh and mention JAVA_HOME path in the location.
+
+JAVA_HOME =/usr/local/java
+
+open /etc/hosts
+---------------
+127.0.0.1 localhost
+127.0.0.1 vm_name
+
+open hbase/conf : 
+IF error:
+If Log Files cant be created & has permission error
+
+sudo chown -R hduser:hadoop /usr/local/hbase
+No Need to perform this unless command not found error finishes:
+chmod 777 -R /usr/local/hbase
+
+-------------------------------------------------------------------------------------Setting up Hbase environment
+-------------------------------------------------------------------------------------
+open hbase-site.xml:
+
+<configuration>
+   //Here you have to set the path where you want HBase to store its files.
+   <property>
+      <name>hbase.rootdir</name>
+      <value>file:///home/hduser/hbase</value>
+   </property>
+   <property>
+      <name>hbase.zookeeper.property.dataDir</name>
+      <value>/home/hduser/hbase/zookeeper</value>
+   </property>
+</configuration>
+
+-------------------------------------------------------------------------------------
+Setting up java environment 
+-------------------------------------------------------------------------------------
+open hdfs-env.sh:
+
+set java home : /usr/local/java
+
+--------------------------------------------------------------------------------------Regionserver error:
+http://hbase.apache.org/0.94/book/trouble.rs.html
+
+--------------------------------------------------------------------------------------
+
+COMMAND:
+--------
+start-hbase.sh
+hbase shell
+
+
+PSEUDO DISTRIBUTED MODE:
+------------------------
+Open hbase-env.sh and mention JAVA_HOME path in the location.
+JAVA_HOME =/usr/local/java
+
+hduser:
+-------
+sudo chown -R hadoop:hadoop /usr/local/hbase
+
+No Need to perform this unless command not found error finishes:
+
+hduser:
+-------
+sudo chmod 777 -R /usr/local/hbase
+
+HBase-site.xml:
+---------------
+<property>
+<name>hbase.rootdir</name>
+<value>hdfs://localhost:9000/hbase</value>
+</property>
+<property>
+<name>hbase.cluster.distributed</name>
+<value>true</value>
+</property>
+<property>
+<name>hbase.zookeeper.quorum</name>
+<value>localhost</value>
+</property>
+<property>
+<name>dfs.replication</name>
+<value>1</value>
+</property>
+
+Hbase-env.sh
+------------
+export JAVA_HOME=/usr/local/java
+export HBASE_REGIONSERVERS=/usr/local/hbase/conf/regionservers
+export HBASE_MANAGES_ZK=true 
