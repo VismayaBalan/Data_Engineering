@@ -1,0 +1,32 @@
+SELECT * FROM c
+
+-- c is an alias for the document within a container
+-- Filter documents from 
+SELECT * FROM c where c.balance > 7000
+
+-- Limit : Show top 10 records
+SELECT TOP 10 * FROM c
+
+-- Aggregate Operations
+-- gives total count
+SELECT VALUE COUNT(1) FROM c
+
+-- Count with alias
+SELECT COUNT(1) AS total_count FROM c
+
+-- sum
+SELECT VALUE sum(c.balance) FROM c
+SELECT sum(c.balance) AS total_balance FROM c
+
+-- AVG
+SELECT VALUE AVG(c.balance) FROM c
+SELECT AVG(c.balance) AS Avg_balance FROM c
+
+-- Group By
+SELECT c.job, AVG(c.balance) AS Avg_balance FROM c GROUP BY c.job
+
+-- Order By
+It does not works with aggregate operations
+
+-- Distinct
+select distinct c.job from c

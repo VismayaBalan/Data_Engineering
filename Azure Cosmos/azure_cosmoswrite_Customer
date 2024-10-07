@@ -1,0 +1,53 @@
+from azure.cosmos import exceptions, CosmosClient, PartitionKey
+import json
+
+
+endpoint = "https://azurecosmos-demo2239.documents.azure.com:443/"
+key = "J2omJiJjxgirY5yvhhWjHcvO68b0ZHtY3P1wrLrvZ9sgzMVBNQ2BQBTSnOxLIu1vbO35kOSipyxZACDbOui2gA=="
+DATABASE_NAME = "bank-azuredb"
+CONTAINER_NAME = "customercontainer"
+
+# Initialize the Cosmos client
+client = CosmosClient(endpoint, key)
+
+# Select the database
+database = client.get_database_client(DATABASE_NAME)
+
+# Select the container
+container = database.get_container_client(CONTAINER_NAME)
+
+
+json_file_path = "customer.json"
+
+try:
+    with open(json_file_path, 'r') as file:
+        data = json.load(file)
+
+    # Insert each JSON object into the Cosmos DB container
+    for item in data:
+        try:
+            container.upsert_item(item)
+            print(f"Item with id {item['id']} successfully inserted in Cosmos DB.")
+        except exceptions.CosmosHttpResponseError as e:
+            print(f"An error occurred while inserting item with id {item['id']}: {e.message}")
+
+except FileNotFoundError:
+    print(f"Error: The file {json_file_path} was not found.")
+except json.JSONDecodeError:
+    print("Please check the format of JSON file.")
+
+# Query to retrieve items from Cosmos DB
+query = "SELECT * FROM c"
+
+try:
+    items = container.query_items(
+        query=query,
+        enable_cross_partition_query=True
+    )
+
+    
+    for item in items:
+        print(item)
+        
+except exceptions.CosmosHttpResponseError as e:
+    print(f"An error occurred during query: {e.message}")

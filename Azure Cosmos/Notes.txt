@@ -1,0 +1,61 @@
+
+Start Azure CLI
+Install -Module AzTable
+$group = "azurestorage-demo2239"
+$storageName = "azurestoragedemo2239"
+$storageAccountKey= "iew40NxfMPawz6fEBcgMJ1smtQWmJh3b9kkCiQFO6KLTcVoEaAr+WF8xDcDEponDd5ZRGAVtn28r+AStXdcdKg=="
+$account = Get-AzStorageAccount -Name $storageName -ResourceGroupName $group
+
+# Create Storage account context
+$context = New-AzStorageContext -StorageAccountName $storageName -StorageAccountKey $storageAccountKey
+
+# Create Storage account context
+$context = $account.Context
+
+# Define table name
+$tableName =  "demoazuretable"
+
+#Create new table name
+New-AzStorageTable -Name $tableName -Context $context
+
+$cloudTable = (Get-AzStorageTable -Name $tableName -Context $context).cloudTable
+$partitionKey1 = "partition1"
+$partitionKey2 = "partition2"
+
+Add-AzTableRow -table $cloudTable -partitionKey $partitionKey1 -rowKey ("CA") -property @{"username"="Uday";"userid":"1"}
+
+Add-AzTableRow -table $cloudTable -partitionKey $partitionKey2 -rowKey ("LA") -property @{"username"="Elias";"userid":"4"}
+
+
+
+
+----------------------------------------------------correctone-----------------------------
+
+Start Azure CLI
+Install -Module AzTable
+-----not needed-----$group = "azurestorage-demo333"
+
+-----not needed----$account = Get-AzStorageAccount -Name $storageName -ResourceGroupName $group
+
+
+$storageName = "azurestoragedemo2239"
+$storageAccountKey= "iew40NxfMPawz6fEBcgMJ1smtQWmJh3b9kkCiQFO6KLTcVoEaAr+WF8xDcDEponDd5ZRGAVtn28r+AStXdcdKg=="
+
+# Create Storage account context
+$context = New-AzStorageContext -StorageAccountName $storageName -StorageAccountKey $storageAccountKey
+
+# Define table name
+$tableName="azuretabledemo"
+
+#create the new table
+New-AzStorageTable -Name $tableName -Context $context
+
+$cloudTable=(Get-AzStorageTable -Name $tableName -Context $context).CloudTable
+$partitionKey1="partition1"
+$partitionKey2="partition2"
+
+Add-AzTableRow -table $cloudTable -partitionKey $partitionKey1 -rowKey("CA") -property @{"username"="Uday";"userid"="1"}
+
+Add-AzTableRow -table $cloudTable -partitionKey $partitionKey1 -rowKey("LA") -property @{"username"="Elias";"userid"="2"}
+
+Get-AzTableRow -table $cloudTable | ft
